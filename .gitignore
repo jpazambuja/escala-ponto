@@ -1,0 +1,10 @@
+# Dependencias / temporarios
+node_modules/
+.DS_Store
+*.log
+
+# NUNCA comitar segredos:
+.env
+.env.*
+supabase/functions/secret
+service_role
