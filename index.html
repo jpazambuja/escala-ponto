@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Escala de Funcionários</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --panel: #1a2230;
+    --panel-2: #222d3d;
+    --border: #2d3a4d;
+    --text: #e6edf3;
+    --muted: #8b98a8;
+    --accent: #4f9cff;
+    --accent-soft: #1e3a5f;
+    --falta: #e25563;
+    --ok: #3fb950;
+    --warn: #f5b942;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+  header { margin-bottom: 14px; }
+  h1 { font-size: 20px; font-weight: 600; }
+  h1 span { color: var(--accent); }
+  .sub { color: var(--muted); font-size: 12px; }
+
+  /* Abas */
+  .tabs {
+    display: flex; gap: 6px; position: sticky; top: 0; z-index: 20;
+    background: var(--bg); padding: 8px 0; margin-bottom: 12px;
+  }
+  .tabs button {
+    flex: 1; background: var(--panel); color: var(--muted); border: 1px solid var(--border);
+    padding: 10px 6px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600;
+  }
+  .tabs button.active { background: var(--accent-soft); color: var(--text); border-color: var(--accent); }
+
+  .tabpane { display: none; }
+  .tabpane.active { display: block; }
+
+  button {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+    padding: 10px 14px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  button:active { background: var(--accent-soft); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.full { width: 100%; }
+
+  .panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px; margin-bottom: 14px;
+  }
+  .panel h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted); margin-bottom: 12px; }
+
+  input, select {
+    background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+    padding: 11px 12px; border-radius: 8px; font-size: 16px; width: 100%;
+  }
+  input[type=color]{ padding:2px; height:44px; }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  label.fld { font-size:12px; color:var(--muted); display:block; margin-bottom:4px; }
+  .form-col { display:flex; flex-direction:column; gap:10px; }
+  .row2 { display:flex; gap:8px; }
+  .row2 > * { flex:1; }
+  .hint { font-size:12px; color:var(--muted); margin-top:10px; }
+
+  /* Lista de funcionários */
+  .emp-list { display:flex; flex-direction:column; gap:6px; }
+  .emp {
+    display:flex; align-items:center; gap:10px; padding:12px;
+    border-radius:10px; cursor:pointer; border:1px solid var(--border); background:var(--panel-2);
+  }
+  .emp.active { border-color: var(--accent); background: var(--accent-soft); }
+  .emp .dot { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
+  .emp .info { flex:1; min-width:0; }
+  .emp .name { font-size:15px; font-weight:600; }
+  .emp .cargo { font-size:12px; color:var(--muted); }
+  .emp .del { color:var(--muted); font-size:22px; padding:0 6px; }
+  .emp .del:active { color:var(--falta); }
+
+  /* Turnos */
+  .shift-row { display:flex; align-items:center; gap:10px; padding:10px; border-radius:8px; background:var(--panel-2); border:1px solid var(--border); margin-bottom:6px; }
+  .shift-row .sw { width:16px; height:16px; border-radius:4px; flex-shrink:0; }
+  .shift-row .sl { flex:1; font-size:14px; }
+  .shift-row .sh { font-size:12px; color:var(--muted); }
+  .shift-row .del { color:var(--muted); font-size:20px; padding:0 4px; }
+
+  /* Banner escalando */
+  .banner {
+    background: var(--accent-soft); border:1px solid var(--accent); border-radius:10px;
+    padding:12px; margin-bottom:12px; display:flex; flex-direction:column; gap:8px;
+  }
+  .banner .lbl { font-size:13px; color:var(--text); }
+  .banner select { font-size:15px; }
+
+  /* Folga semanal */
+  .wk-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .wk-row .wl { flex:1; font-size:13px; }
+  .wk-row .wl small { color:var(--muted); }
+  .wk-row select { width:140px; flex-shrink:0; }
+
+  .alert-box { border-radius:10px; padding:10px 12px; margin-bottom:12px; font-size:13px; display:flex; gap:8px; align-items:flex-start; }
+  .alert-box.warn { background: rgba(245,185,66,.12); border:1px solid rgba(245,185,66,.4); color:#f5d18a; }
+  .alert-box.ok { background: rgba(63,185,80,.12); border:1px solid rgba(63,185,80,.4); color:#9ae6a4; }
+  .alert-box.info { background: var(--panel-2); border:1px solid var(--border); color:var(--muted); }
+  .alert-box ul { margin: 4px 0 0 16px; }
+  .alert-box li { cursor:pointer; }
+
+  /* Navegação do mês */
+  .month-nav { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+  .month-nav .label { font-size:17px; font-weight:600; flex:1; text-align:center; }
+  .month-nav button { padding:10px 16px; font-size:18px; }
+
+  .legend { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .legend .item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--muted); }
+  .legend .sw { width:12px; height:12px; border-radius:3px; }
+
+  /* Calendário */
+  table.cal { width:100%; border-collapse:collapse; table-layout:fixed; }
+  table.cal th { font-size:10px; color:var(--muted); text-transform:uppercase; padding:5px 0; font-weight:600; }
+  table.cal td {
+    border:1px solid var(--border); height:74px; vertical-align:top; padding:3px; position:relative;
+  }
+  table.cal td.empty { background:transparent; border-color:transparent; }
+  table.cal td .daynum { font-size:11px; color:var(--muted); font-weight:600; }
+  table.cal td.today .daynum { color:var(--accent); }
+  table.cal td.today { box-shadow: inset 0 0 0 2px var(--accent); }
+  table.cal td.weekend { background: rgba(255,255,255,.02); }
+  table.cal td.uncovered { background: rgba(226,85,99,.10); }
+  table.cal td .flag { position:absolute; top:3px; right:4px; font-size:10px; }
+  .chips { display:flex; flex-direction:column; gap:2px; margin-top:3px; }
+  .chip {
+    font-size:10px; padding:1px 4px; border-radius:4px; cursor:pointer;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:flex; align-items:center; gap:3px;
+  }
+  .chip .cdot { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+
+  .stats { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:8px; margin-top:14px; }
+  .stat { background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:10px; }
+  .stat .n { font-size:18px; font-weight:700; }
+  .stat .hrs { font-size:13px; font-weight:600; color:var(--accent); }
+  .stat .l { font-size:11px; color:var(--muted); }
+
+  /* Modal */
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-end; justify-content:center; z-index:50; }
+  .modal-bg.show { display:flex; }
+  .modal { background:var(--panel); border:1px solid var(--border); border-radius:16px 16px 0 0; padding:18px; width:100%; max-width:480px; max-height:85vh; overflow:auto; }
+  .modal h3 { font-size:17px; margin-bottom:4px; }
+  .modal .day-label { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  .shift-opts { display:flex; flex-direction:column; gap:8px; }
+  .shift-opt { display:flex; align-items:center; gap:10px; padding:12px; border:1px solid var(--border); border-radius:10px; cursor:pointer; }
+  .shift-opt:active { background:var(--panel-2); }
+  .shift-opt .sw { width:18px; height:18px; border-radius:5px; }
+  .shift-opt .so-h { margin-left:auto; font-size:12px; color:var(--muted); }
+  .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+
+  .settings-row { display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:14px; }
+  .settings-row label { flex:1; color:var(--muted); }
+  .settings-row input { width:80px; }
+  .empty-state { color:var(--muted); font-size:13px; text-align:center; padding:24px 10px; }
+
+  /* Histórico */
+  .hist-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .hist-summary .box { background:var(--panel-2); border:1px solid var(--border); border-radius:10px; padding:10px 6px; text-align:center; }
+  .hist-summary .box .n { font-size:20px; font-weight:700; }
+  .hist-summary .box .l { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.3px; }
+  .hist-list { display:flex; flex-direction:column; }
+  .hist-day { display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px solid var(--border); }
+  .hist-day.weekend { background:rgba(255,255,255,.02); }
+  .hist-day.today { box-shadow:inset 3px 0 0 var(--accent); }
+  .hist-day .dnum { font-size:15px; font-weight:700; width:26px; text-align:center; }
+  .hist-day .dwk { font-size:12px; color:var(--muted); width:64px; }
+  .hist-day .badge { margin-left:auto; font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px; }
+
+  @media (min-width:560px) {
+    table.cal td { height:88px; }
+    .chip { font-size:11px; }
+  }
+
+  @media print {
+    body { background:#fff; color:#000; }
+    .no-print { display:none !important; }
+    .tabpane { display:block !important; }
+    .panel { border:none; padding:0; }
+    table.cal td { border:1px solid #999; color:#000; }
+    table.cal th, .daynum { color:#000 !important; }
+    .chip { border:1px solid #999 !important; }
+    .print-title { display:block !important; font-size:18px; font-weight:700; margin-bottom:10px; color:#000; }
+  }
+  .print-title { display:none; }
+
+  /* Login */
+  .login-wrap { max-width: 420px; margin: 0 auto; padding: 24px 16px; }
+  .login-card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:22px; margin-top:18px; }
+  .role-toggle { display:flex; gap:8px; margin-bottom:18px; }
+  .role-toggle button { flex:1; }
+  .role-toggle button.active { background:var(--accent-soft); border-color:var(--accent); color:var(--text); }
+  .login-card .form-col { gap:12px; }
+  .secnote { font-size:11px; color:var(--muted); background:rgba(245,185,66,.08); border:1px solid rgba(245,185,66,.3); border-radius:8px; padding:8px 10px; margin-top:14px; }
+
+  /* App do funcionário */
+  .emp-app { max-width:520px; margin:0 auto; padding:16px; }
+  .emp-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+  .emp-head .hi { font-size:20px; font-weight:600; }
+  .emp-head .hi small { display:block; font-size:12px; color:var(--muted); font-weight:400; }
+  .clock-card { background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:22px; text-align:center; margin-bottom:16px; }
+  .clock-time { font-size:42px; font-weight:700; letter-spacing:1px; }
+  .clock-date { font-size:13px; color:var(--muted); margin-bottom:6px; }
+  .clock-status { font-size:14px; margin:10px 0 16px; }
+  .clock-status .pill { padding:4px 12px; border-radius:20px; font-weight:600; }
+  .clock-status .working { background:rgba(63,185,80,.18); color:var(--ok); }
+  .clock-status .outside { background:var(--panel-2); color:var(--muted); }
+  .btn-punch { width:100%; padding:20px; font-size:18px; font-weight:700; border-radius:14px; border:none; color:#fff; cursor:pointer; }
+  .btn-punch.in { background:var(--ok); }
+  .btn-punch.out { background:var(--falta); }
+  .punch-today { margin-top:14px; font-size:13px; color:var(--muted); text-align:left; }
+  .punch-today .pl { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); }
+  .punch-today .pl b { color:var(--text); }
+</style>
+</head>
+<body>
+  <!-- TELA DE LOGIN -->
+  <div class="login-wrap" id="loginScreen" style="display:none">
+    <header>
+      <h1>Escala de <span>Funcionários</span></h1>
+      <div class="sub">Acesse para gerenciar a escala ou bater o ponto</div>
+    </header>
+    <div class="login-card">
+      <div class="role-toggle">
+        <button id="roleEmp" class="active" onclick="setLoginRole('emp')">👤 Funcionário</button>
+        <button id="roleAdmin" onclick="setLoginRole('admin')">🛠️ Gestor</button>
+      </div>
+
+      <div id="loginEmp" class="form-col">
+        <div><label class="fld">Seu login</label><input id="liLogin" autocapitalize="none" placeholder="ex: maria"></div>
+        <div><label class="fld">PIN / senha</label><input id="liPin" type="password" inputmode="numeric" placeholder="••••" onkeydown="if(event.key==='Enter')doLoginEmp()"></div>
+        <button class="primary full" onclick="doLoginEmp()">Entrar</button>
+      </div>
+
+      <div id="loginAdmin" class="form-col" style="display:none">
+        <div><label class="fld">E-mail do gestor</label><input id="liAdminEmail" type="email" autocapitalize="none" placeholder="gestor@exemplo.com"></div>
+        <div><label class="fld">Senha do gestor</label><input id="liAdmin" type="password" placeholder="senha" onkeydown="if(event.key==='Enter')doLoginAdmin()"></div>
+        <button class="primary full" onclick="doLoginAdmin()">Entrar como gestor</button>
+      </div>
+
+      <div class="secnote">🔒 Conectado à nuvem (Supabase): login e dados sincronizam entre todos os aparelhos, com backup automático e segurança por usuário (RLS).</div>
+    </div>
+  </div>
+
+  <!-- APP DO FUNCIONÁRIO -->
+  <div class="emp-app" id="empApp" style="display:none">
+    <div class="emp-head">
+      <div class="hi" id="empHi"></div>
+      <button onclick="logout()">Sair</button>
+    </div>
+    <div class="clock-card">
+      <div class="clock-date" id="clockDate"></div>
+      <div class="clock-time" id="clockTime">--:--</div>
+      <div class="clock-status" id="clockStatus"></div>
+      <button class="btn-punch in" id="btnPunch" onclick="clockToggle()">Bater ponto</button>
+      <div class="hint" style="text-align:center;margin-top:8px">📍 Ao bater o ponto, sua localização e uma foto são registradas para conferência.</div>
+      <div class="punch-today" id="punchToday"></div>
+    </div>
+    <div id="empHistArea"></div>
+  </div>
+
+<div class="wrap" id="adminApp" style="display:none">
+  <header class="no-print">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+      <div>
+        <h1>Escala de <span>Funcionários</span></h1>
+        <div class="sub">Cadastre, defina a folga semanal e imprima — salvo no navegador</div>
+      </div>
+      <button onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <div class="print-title" id="printTitle"></div>
+
+  <div class="tabs no-print">
+    <button data-tab="escala" class="active" onclick="setTab('escala')">📅 Escala</button>
+    <button data-tab="hist" onclick="setTab('hist')">📋 Histórico</button>
+    <button data-tab="ponto" onclick="setTab('ponto')">⏱️ Ponto</button>
+    <button data-tab="func" onclick="setTab('func')">👥 Equipe</button>
+    <button data-tab="config" onclick="setTab('config')">⚙️ Config</button>
+  </div>
+
+  <!-- ABA: HISTÓRICO -->
+  <section class="tabpane" id="tab-hist">
+    <div class="month-nav no-print">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="label" id="monthLabelHist"></span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <button class="full no-print" style="margin:-4px 0 12px" onclick="goToday()">📍 Ir para hoje</button>
+
+    <div class="banner no-print" id="histBanner"></div>
+    <div id="histBody"></div>
+  </section>
+
+  <!-- ABA: PONTO (gestor) -->
+  <section class="tabpane" id="tab-ponto">
+    <div class="month-nav no-print">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="label" id="monthLabelPonto"></span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="banner no-print" id="pontoBanner"></div>
+    <div id="pontoBody"></div>
+  </section>
+
+  <!-- ABA: FUNCIONÁRIOS -->
+  <section class="tabpane" id="tab-func">
+    <div class="panel">
+      <h2>Cadastrar funcionário</h2>
+      <div class="form-col">
+        <div>
+          <label class="fld">Nome</label>
+          <input id="empName" placeholder="Ex: Maria Silva" onkeydown="if(event.key==='Enter')addEmp()">
+        </div>
+        <div>
+          <label class="fld">Cargo</label>
+          <input id="empCargo" placeholder="Ex: Atendente">
+        </div>
+        <div class="row2">
+          <div><label class="fld">Login (para o ponto)</label><input id="empLogin" autocapitalize="none" placeholder="ex: maria"></div>
+          <div><label class="fld">PIN / senha</label><input id="empPin" placeholder="ex: 1234"></div>
+        </div>
+        <button class="primary full" onclick="addEmp()">+ Cadastrar</button>
+      </div>
+      <div class="hint">Todos entram em <strong>escala livre</strong> — você só define a folga de cada semana na aba Escala.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Equipe</h2>
+      <div class="emp-list" id="empList"></div>
+    </div>
+  </section>
+
+  <!-- ABA: ESCALA -->
+  <section class="tabpane active" id="tab-escala">
+    <div class="month-nav no-print">
+      <button onclick="changeMonth(-1)">‹</button>
+      <span class="label" id="monthLabel"></span>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+    <button class="full no-print" style="margin:-4px 0 12px" onclick="goToday()">📍 Ir para hoje</button>
+
+    <div class="banner no-print" id="escalandoBanner"></div>
+
+    <div class="panel no-print" id="weeklyPanel" style="display:none">
+      <h2>Folga semanal</h2>
+      <div id="weeklyBody"></div>
+    </div>
+
+    <div id="alertArea"></div>
+    <div class="legend" id="legend"></div>
+
+    <table class="cal">
+      <thead><tr>
+        <th>Dom</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th>
+      </tr></thead>
+      <tbody id="calBody"></tbody>
+    </table>
+
+    <div class="stats" id="stats"></div>
+
+    <button class="full no-print" style="margin-top:14px" onclick="window.print()">🖨 Imprimir / Salvar PDF</button>
+  </section>
+
+  <!-- ABA: CONFIG -->
+  <section class="tabpane" id="tab-config">
+    <div class="panel">
+      <h2>Turnos</h2>
+      <div class="shift-list" id="shiftList"></div>
+      <div class="form-col" style="margin-top:12px">
+        <input id="shName" placeholder="Nome do turno (ex: Comercial)">
+        <div class="row2">
+          <div><label class="fld">Início</label><input id="shStart" type="time" value="08:00"></div>
+          <div><label class="fld">Fim</label><input id="shEnd" type="time" value="16:00"></div>
+          <div><label class="fld">Cor</label><input id="shColor" type="color" value="#4f9cff"></div>
+        </div>
+        <button class="primary full" onclick="addShift()">+ Adicionar turno</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Regras de cobertura</h2>
+      <div class="settings-row">
+        <label>Mín. trabalhando por dia</label>
+        <input type="number" min="0" id="setMin" value="1" onchange="updateSettings()">
+      </div>
+      <div class="settings-row">
+        <label>Máx. folgas no mesmo dia</label>
+        <input type="number" min="0" id="setMaxFolga" value="2" onchange="updateSettings()">
+      </div>
+      <div class="hint">Dias fora da regra ficam destacados no calendário e na lista de alertas.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Senha do gestor</h2>
+      <div class="form-col">
+        <input id="cfgAdminPin" type="password" placeholder="Nova senha do gestor (mín. 6 caracteres)">
+        <button class="full" onclick="changeAdminPin()">Salvar senha</button>
+      </div>
+      <div class="hint">Troque a senha provisória agora. Os funcionários usam o login/PIN definidos no cadastro.</div>
+    </div>
+
+    <div class="panel">
+      <h2>Backup</h2>
+      <div class="form-col">
+        <button class="full" onclick="exportJSON()">⬇ Exportar uma cópia (.json)</button>
+      </div>
+      <div class="hint">Os dados já ficam salvos na nuvem com backup automático do Supabase. Este botão só gera uma cópia local extra, se você quiser.</div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h3 id="modalEmp">Funcionário</h3>
+    <div class="day-label" id="modalDay">Dia</div>
+    <div class="shift-opts" id="shiftOpts"></div>
+    <div class="modal-actions">
+      <button onclick="closeModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===================== CONFIG SUPABASE ===================== */
+const SUPABASE_URL = "https://bcxmneiyifvclqkysock.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjeG1uZWl5aWZ2Y2xxa3lzb2NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE3NDkyNjAsImV4cCI6MjA5NzMyNTI2MH0.wjw-ty0v2Ob9QsmDJ7UU0pFjWXxaIuSH71ehNv9NuMk";
+const EMAIL_DOMAIN = "escala.local";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Tem que bater com o padPin da Edge Function admin-users:
+function padPin(pin){ return `pin_${pin}_escala2026`; }
+function loginToEmail(login){ return `${String(login).trim().toLowerCase()}@${EMAIL_DOMAIN}`; }
+
+const MARKERS = {
+  folga: { label: "Folga", color: "#3a4658" },
+  falta: { label: "Falta", color: "#e25563" },
+};
+const PALETTE = ["#4f9cff","#3fb950","#f5b942","#ff7a59","#7c6cf0","#e25563","#2dd4bf","#f472b6","#a3e635","#fb923c"];
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+
+function emptyState(){ return { emps: [], schedule: {}, shifts: [], settings: { minWork:1, maxFolga:2 }, punches: {} }; }
+let state = emptyState();
+let view = { y: new Date().getFullYear(), m: new Date().getMonth() };
+let selectedEmp = null;
+let modalCtx = null;
+let curTab = "escala";
+
+/* Carrega tudo da nuvem para o objeto `state` (RLS entrega só o que o usuário pode ver). */
+async function loadFromCloud() {
+  const [profsR, shiftsR, setR, schedR, punchR] = await Promise.all([
+    sb.from("profiles").select("*").eq("role","funcionario").order("created_at"),
+    sb.from("shifts").select("*").order("sort"),
+    sb.from("settings").select("*").eq("id",1).maybeSingle(),
+    sb.from("schedule").select("*"),
+    sb.from("punches").select("*").order("ts"),
+  ]);
+  const st = emptyState();
+  st.shifts = (shiftsR.data||[]).map(s=>({ id:s.id, label:s.label, color:s.color, start:s.start_t, end:s.end_t, sort:s.sort }));
+  st.emps = (profsR.data||[]).map(p=>({ id:p.user_id, name:p.name, cargo:p.cargo||"", login:p.login||"", pin:"", color:p.color||"#4f9cff", workShift:p.work_shift||st.shifts[0]?.id||null, pattern:"livre" }));
+  if (setR.data) st.settings = { minWork:setR.data.min_work, maxFolga:setR.data.max_folga };
+  (schedR.data||[]).forEach(r=>{ st.schedule[r.employee_id+"|"+r.day] = r.value; });
+  (punchR.data||[]).forEach(r=>{
+    (st.punches[r.employee_id] ||= []).push({
+      id:r.id, t:new Date(r.ts).getTime(), type:r.type,
+      nsr:r.nsr, lat:r.lat, lng:r.lng, accuracy:r.accuracy, photo_path:r.photo_path, hash:r.hash
+    });
+  });
+  state = st;
+}
+/* `save()` vira no-op: cada mutação grava direto na tabela certa (ver funções abaixo). */
+function save() {}
+function cloudErr(e){ console.error(e); alert("Erro ao salvar na nuvem: " + (e?.message||e)); }
+async function reloadAndRender(){ await loadFromCloud(); render(); }
+
+function uid() { return Math.random().toString(36).slice(2,9); }
+function key(empId, ds) { return empId + "|" + ds; }
+function dateStr(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+function resolve(v) {
+  if (!v) return null;
+  if (MARKERS[v]) return { ...MARKERS[v], work:false, id:v };
+  const s = state.shifts.find(s=>s.id===v);
+  if (s) return { ...s, work:true };
+  return null;
+}
+function shiftHours(s) {
+  const [h1,m1] = s.start.split(":").map(Number);
+  const [h2,m2] = s.end.split(":").map(Number);
+  let mins = (h2*60+m2) - (h1*60+m1);
+  if (mins <= 0) mins += 24*60;
+  return mins/60;
+}
+function fmtH(h){ return (Math.round(h*10)/10).toString().replace('.', ',') + "h"; }
+
+/* Abas */
+function setTab(t) {
+  curTab = t;
+  document.querySelectorAll(".tabpane").forEach(p=>p.classList.remove("active"));
+  document.getElementById("tab-"+t).classList.add("active");
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("active", b.dataset.tab===t));
+  window.scrollTo(0,0);
+}
+
+/* Funcionários (criados na nuvem via Edge Function admin-users) */
+async function fnError(error){ // extrai a mensagem de erro vinda da Edge Function
+  let msg = error?.message || "erro";
+  try { const j = await error.context.json(); if (j?.error) msg = j.error; } catch(e){}
+  return msg;
+}
+async function addEmp() {
+  const name = document.getElementById("empName").value.trim();
+  if (!name) { alert("Digite o nome."); return; }
+  const cargo = document.getElementById("empCargo").value.trim();
+  const login = document.getElementById("empLogin").value.trim().toLowerCase();
+  const pin = document.getElementById("empPin").value.trim();
+  if (!login) { alert("Defina um login (o funcionário usa pra entrar e bater ponto)."); return; }
+  if (!pin) { alert("Defina um PIN/senha para o funcionário."); return; }
+  if (state.emps.some(e=>e.login===login)) { alert("Já existe um funcionário com esse login."); return; }
+  const color = PALETTE[state.emps.length % PALETTE.length];
+  const work_shift = state.shifts[0]?.id || null;
+  const btn = document.querySelector('#tab-func button.primary');
+  if (btn){ btn.disabled = true; btn.textContent = "Criando…"; }
+  const { data, error } = await sb.functions.invoke("admin-users", {
+    body: { action:"create-employee", name, cargo, login, pin, color, work_shift }
+  });
+  if (btn){ btn.disabled = false; btn.textContent = "+ Cadastrar"; }
+  if (error || !data?.ok) {
+    const msg = error ? await fnError(error) : (data?.error||"falhou");
+    alert("Não foi possível cadastrar: " + msg);
+    return;
+  }
+  document.getElementById("empName").value = "";
+  document.getElementById("empCargo").value = "";
+  document.getElementById("empLogin").value = "";
+  document.getElementById("empPin").value = "";
+  selectedEmp = data.user_id;
+  await reloadAndRender();
+  document.getElementById("empName").focus();
+}
+async function delEmp(id, ev) {
+  ev.stopPropagation();
+  const emp = state.emps.find(e=>e.id===id);
+  if (!confirm(`Remover ${emp.name} e toda a escala/ponto dele?`)) return;
+  const { data, error } = await sb.functions.invoke("admin-users", {
+    body: { action:"delete-employee", user_id:id }
+  });
+  if (error || !data?.ok) { alert("Erro ao remover: " + (error ? await fnError(error) : data?.error)); return; }
+  if (selectedEmp===id) selectedEmp = null;
+  await reloadAndRender();
+}
+async function resetPin(id, ev) {
+  ev.stopPropagation();
+  const emp = state.emps.find(e=>e.id===id);
+  const pin = prompt(`Novo PIN/senha para ${emp.name} (login: ${emp.login}):`);
+  if (pin === null) return;
+  const p = String(pin).trim();
+  if (!p) { alert("PIN vazio."); return; }
+  const { data, error } = await sb.functions.invoke("admin-users", { body: { action:"set-pin", user_id:id, pin:p } });
+  if (error || !data?.ok) { alert("Erro ao resetar PIN: " + (error ? await fnError(error) : data?.error)); return; }
+  alert(`PIN de ${emp.name} atualizado.`);
+}
+function selectEmp(id) { selectedEmp = id; render(); }
+function selectAndGoEscala(id) { selectedEmp = id; setTab("escala"); render(); }
+
+/* Turnos */
+async function addShift() {
+  const label = document.getElementById("shName").value.trim();
+  if (!label) { alert("Dê um nome ao turno."); return; }
+  const start = document.getElementById("shStart").value;
+  const end = document.getElementById("shEnd").value;
+  const color = document.getElementById("shColor").value;
+  const sort = (state.shifts.reduce((m,s)=>Math.max(m, s.sort??0), -1)) + 1;
+  const { error } = await sb.from("shifts").insert({ label, color, start_t:start, end_t:end, sort });
+  if (error) return cloudErr(error);
+  document.getElementById("shName").value = "";
+  await reloadAndRender();
+}
+async function delShift(id, ev) {
+  ev.stopPropagation();
+  const s = state.shifts.find(s=>s.id===id);
+  const used = Object.values(state.schedule).filter(v=>v===id).length;
+  let msg = `Remover o turno "${s.label}"?`;
+  if (used) msg += `\n\nEle está marcado em ${used} dia(s), que ficarão sem marcação.`;
+  if (!confirm(msg)) return;
+  const delSched = await sb.from("schedule").delete().eq("value", id);
+  if (delSched.error) return cloudErr(delSched.error);
+  const { error } = await sb.from("shifts").delete().eq("id", id);
+  if (error) return cloudErr(error);
+  await reloadAndRender();
+}
+
+/* Config */
+async function updateSettings() {
+  state.settings.minWork = Math.max(0, parseInt(document.getElementById("setMin").value)||0);
+  state.settings.maxFolga = Math.max(0, parseInt(document.getElementById("setMaxFolga").value)||0);
+  render();
+  const { error } = await sb.from("settings").update({ min_work:state.settings.minWork, max_folga:state.settings.maxFolga }).eq("id",1);
+  if (error) cloudErr(error);
+}
+
+/* Helpers de escala na nuvem */
+async function pushSchedule(rows){
+  if(!rows.length) return;
+  const { error } = await sb.from("schedule").upsert(rows, { onConflict:"employee_id,day" });
+  if(error) cloudErr(error);
+}
+async function pushDeleteSchedule(empId, day){
+  const { error } = await sb.from("schedule").delete().eq("employee_id", empId).eq("day", day);
+  if(error) cloudErr(error);
+}
+
+/* Navegação */
+function changeMonth(delta) {
+  view.m += delta;
+  if (view.m < 0) { view.m = 11; view.y--; }
+  if (view.m > 11) { view.m = 0; view.y++; }
+  render();
+}
+function goToday() {
+  const n = new Date();
+  view.y = n.getFullYear(); view.m = n.getMonth();
+  render();
+}
+
+/* Folga semanal */
+function weeksOfMonth(y,m) {
+  const days = new Date(y, m+1, 0).getDate();
+  const weeks = []; let cur = [];
+  for (let d=1; d<=days; d++) {
+    cur.push(d);
+    if (new Date(y,m,d).getDay() === 6) { weeks.push(cur); cur = []; }
+  }
+  if (cur.length) weeks.push(cur);
+  return weeks;
+}
+function isWeekend(y,m,d){ const w=new Date(y,m,d).getDay(); return w===0||w===6; }
+function weekFolgaDay(empId, weekDays) {
+  for (const d of weekDays) {
+    if (state.schedule[key(empId, dateStr(view.y, view.m, d))] === "folga") return d;
+  }
+  return null;
+}
+function weekendFolgaCount(empId) {
+  let n = 0;
+  const days = new Date(view.y, view.m+1, 0).getDate();
+  for (let d=1; d<=days; d++) {
+    if (state.schedule[key(empId, dateStr(view.y,view.m,d))]==="folga" && isWeekend(view.y,view.m,d)) n++;
+  }
+  return n;
+}
+async function setEmpWorkShift(empId, sid) {
+  const emp = state.emps.find(e=>e.id===empId);
+  emp.workShift = sid;
+  const days = new Date(view.y, view.m+1, 0).getDate();
+  const rows = [];
+  for (let d=1; d<=days; d++) {
+    const ds = dateStr(view.y,view.m,d);
+    const kk = key(empId, ds);
+    const v = state.schedule[kk];
+    if (v && !MARKERS[v]) { state.schedule[kk] = sid; rows.push({ employee_id:empId, day:ds, value:sid }); }
+  }
+  render();
+  const up = await sb.from("profiles").update({ work_shift: sid }).eq("user_id", empId);
+  if (up.error) cloudErr(up.error);
+  await pushSchedule(rows);
+}
+async function setWeekFolga(empId, weekIdx, dayVal) {
+  const emp = state.emps.find(e=>e.id===empId);
+  const ws = emp.workShift || state.shifts[0]?.id;
+  if (!ws) { alert("Crie um turno na aba Config primeiro."); return; }
+  const weekDays = weeksOfMonth(view.y, view.m)[weekIdx];
+  const chosen = dayVal ? parseInt(dayVal) : null;
+  const rows = [];
+  weekDays.forEach(d=>{
+    const ds = dateStr(view.y,view.m,d);
+    const kk = key(empId, ds);
+    const cur = state.schedule[kk];
+    if (chosen && d === chosen) { state.schedule[kk] = "folga"; rows.push({ employee_id:empId, day:ds, value:"folga" }); }
+    else if (cur === "folga" || !cur) { state.schedule[kk] = ws; rows.push({ employee_id:empId, day:ds, value:ws }); }
+  });
+  render();
+  await pushSchedule(rows);
+}
+
+/* Modal */
+function openModal(empId, ds, dayLabel) {
+  modalCtx = { empId, ds };
+  const emp = state.emps.find(e=>e.id===empId);
+  document.getElementById("modalEmp").textContent = emp.name;
+  document.getElementById("modalDay").textContent = dayLabel;
+  const opts = document.getElementById("shiftOpts");
+  opts.innerHTML = "";
+  const cur = state.schedule[key(empId, ds)];
+  state.shifts.forEach(s=>{
+    opts.appendChild(optEl(s.id, s.label, s.color, `${s.start}–${s.end} · ${fmtH(shiftHours(s))}`, cur===s.id));
+  });
+  Object.entries(MARKERS).forEach(([k,m])=>{
+    opts.appendChild(optEl(k, m.label, m.color, "", cur===k));
+  });
+  opts.appendChild(optEl("limpar", "Limpar marcação", "transparent", "", false));
+  document.getElementById("modalBg").classList.add("show");
+}
+function optEl(val, label, color, sub, active) {
+  const div = document.createElement("div");
+  div.className = "shift-opt";
+  div.onclick = ()=>setShift(val);
+  const swStyle = color==='transparent' ? 'border:1px dashed var(--border)' : `background:${color}`;
+  div.style.borderColor = active ? color : "";
+  div.innerHTML = `<span class="sw" style="${swStyle}"></span> ${escapeHtml(label)}
+    <span class="so-h">${sub}${active?' ✓':''}</span>`;
+  return div;
+}
+function closeModal() { document.getElementById("modalBg").classList.remove("show"); modalCtx=null; }
+async function setShift(k) {
+  if (!modalCtx) return;
+  const { empId, ds } = modalCtx;
+  const kk = key(empId, ds);
+  const clearing = (k === "limpar");
+  if (clearing) delete state.schedule[kk];
+  else state.schedule[kk] = k;
+  closeModal(); render();
+  if (clearing) await pushDeleteSchedule(empId, ds);
+  else await pushSchedule([{ employee_id:empId, day:ds, value:k }]);
+}
+
+/* Cobertura */
+function dayCoverage(ds) {
+  let work=0, folga=0;
+  state.emps.forEach(emp=>{
+    const c = resolve(state.schedule[key(emp.id, ds)]);
+    if (!c) return;
+    if (c.work) work++;
+    else if (c.id==="folga") folga++;
+  });
+  return { work, folga };
+}
+
+/* Render */
+function render() {
+  renderEmps();
+  renderShifts();
+  renderWeekly();
+  renderSettings();
+  renderLegend();
+  document.getElementById("monthLabel").textContent = `${MESES[view.m]} ${view.y}`;
+  document.getElementById("monthLabelHist").textContent = `${MESES[view.m]} ${view.y}`;
+  document.getElementById("monthLabelPonto").textContent = `${MESES[view.m]} ${view.y}`;
+  document.getElementById("printTitle").textContent = `Escala — ${MESES[view.m]} ${view.y}`;
+  renderBanner();
+  renderCalendar();
+  renderAlerts();
+  renderStats();
+  renderHist();
+  renderPonto();
+}
+
+function renderEmps() {
+  const list = document.getElementById("empList");
+  if (state.emps.length === 0) {
+    list.innerHTML = `<div class="empty-state">Nenhum funcionário ainda.<br>Cadastre acima 👆</div>`;
+    return;
+  }
+  list.innerHTML = "";
+  state.emps.forEach(emp=>{
+    const div = document.createElement("div");
+    div.className = "emp" + (emp.id===selectedEmp ? " active" : "");
+    div.onclick = ()=>selectAndGoEscala(emp.id);
+    div.innerHTML = `<span class="dot" style="background:${emp.color}"></span>
+      <div class="info">
+        <div class="name">${escapeHtml(emp.name)}</div>
+        <div class="cargo">${emp.cargo ? escapeHtml(emp.cargo) : 'sem cargo'}${emp.login ? ' · 🔑 '+escapeHtml(emp.login) : ''}</div>
+      </div>
+      <span class="del" title="Resetar PIN" style="font-size:17px" onclick="resetPin('${emp.id}', event)">🔑</span>
+      <span class="del" title="Remover" onclick="delEmp('${emp.id}', event)">×</span>`;
+    list.appendChild(div);
+  });
+}
+
+function renderShifts() {
+  const list = document.getElementById("shiftList");
+  if (state.shifts.length === 0) { list.innerHTML = `<div class="empty-state">Sem turnos.</div>`; return; }
+  list.innerHTML = "";
+  state.shifts.forEach(s=>{
+    const div = document.createElement("div");
+    div.className = "shift-row";
+    div.innerHTML = `<span class="sw" style="background:${s.color}"></span>
+      <span class="sl">${escapeHtml(s.label)}</span>
+      <span class="sh">${s.start}–${s.end} · ${fmtH(shiftHours(s))}</span>
+      <span class="del" onclick="delShift('${s.id}', event)">×</span>`;
+    list.appendChild(div);
+  });
+}
+
+function renderSettings() {
+  document.getElementById("setMin").value = state.settings.minWork;
+  document.getElementById("setMaxFolga").value = state.settings.maxFolga;
+}
+
+function renderLegend() {
+  const leg = document.getElementById("legend");
+  leg.innerHTML = "";
+  state.shifts.forEach(s=>{
+    leg.innerHTML += `<div class="item"><span class="sw" style="background:${s.color}"></span>${escapeHtml(s.label)}</div>`;
+  });
+  Object.values(MARKERS).forEach(m=>{
+    leg.innerHTML += `<div class="item"><span class="sw" style="background:${m.color}"></span>${m.label}</div>`;
+  });
+}
+
+function renderBanner() {
+  const b = document.getElementById("escalandoBanner");
+  if (state.emps.length === 0) {
+    b.style.display = "block";
+    b.innerHTML = `<div class="lbl">Nenhum funcionário. Vá em <strong>👥 Funcionários</strong> e cadastre o primeiro.</div>`;
+    return;
+  }
+  b.style.display = "flex";
+  let sel = `<div class="lbl">✏️ Escalando:</div><select onchange="selectEmp(this.value)">`;
+  state.emps.forEach(e=>{
+    sel += `<option value="${e.id}" ${e.id===selectedEmp?'selected':''}>${escapeHtml(e.name)}${e.cargo?' — '+escapeHtml(e.cargo):''}</option>`;
+  });
+  sel += `</select><div class="lbl" style="color:var(--muted)">Toque num dia do calendário para marcar turno/folga.</div>`;
+  b.innerHTML = sel;
+}
+
+function renderWeekly() {
+  const panel = document.getElementById("weeklyPanel");
+  const emp = state.emps.find(e=>e.id===selectedEmp);
+  if (!emp) { panel.style.display = "none"; return; }
+  panel.style.display = "block";
+  const body = document.getElementById("weeklyBody");
+  const weeks = weeksOfMonth(view.y, view.m);
+  const wkFolgas = weekendFolgaCount(emp.id);
+
+  let shiftSel = `<div style="margin-bottom:12px"><label class="fld">Turno de trabalho de ${escapeHtml(emp.name)}</label>
+    <select onchange="setEmpWorkShift('${emp.id}', this.value)">`;
+  state.shifts.forEach(s=>{
+    shiftSel += `<option value="${s.id}" ${emp.workShift===s.id?'selected':''}>${escapeHtml(s.label)} (${s.start}–${s.end})</option>`;
+  });
+  shiftSel += `</select></div>`;
+
+  let rule;
+  if (wkFolgas === 0) rule = `<div class="alert-box info">Nenhuma folga de fim de semana neste mês. Pode escolher <strong>1</strong>.</div>`;
+  else if (wkFolgas === 1) rule = `<div class="alert-box ok"><span>✅</span><div>1 folga de fim de semana neste mês.</div></div>`;
+  else rule = `<div class="alert-box warn"><span>⚠️</span><div><strong>${wkFolgas} fins de semana de folga</strong> — a regra permite só 1 por mês.</div></div>`;
+
+  let rows = weeks.map((wd, i)=>{
+    const cur = weekFolgaDay(emp.id, wd);
+    const range = `${wd[0]}–${wd[wd.length-1]}`;
+    let opts = `<option value="">— sem folga —</option>`;
+    wd.forEach(d=>{
+      const wknd = isWeekend(view.y,view.m,d);
+      opts += `<option value="${d}" ${cur===d?'selected':''}>${d} ${weekdayName(view.y,view.m,d).slice(0,3)}${wknd?' 🌅':''}</option>`;
+    });
+    return `<div class="wk-row">
+      <div class="wl">Semana ${i+1} <small>(${range})</small></div>
+      <select onchange="setWeekFolga('${emp.id}', ${i}, this.value)">${opts}</select>
+    </div>`;
+  }).join("");
+
+  body.innerHTML = shiftSel + rule + rows +
+    `<div class="hint">🌅 = fim de semana. A folga escolhida vira "Folga"; os demais dias da semana viram trabalho.</div>`;
+}
+
+function renderCalendar() {
+  const body = document.getElementById("calBody");
+  body.innerHTML = "";
+  const firstDow = new Date(view.y, view.m, 1).getDay();
+  const days = new Date(view.y, view.m+1, 0).getDate();
+  const todayStr = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+  let day = 1;
+  for (let week=0; week<6; week++) {
+    if (day > days) break;
+    const tr = document.createElement("tr");
+    for (let dow=0; dow<7; dow++) {
+      const td = document.createElement("td");
+      if ((week===0 && dow<firstDow) || day>days) {
+        td.className = "empty";
+      } else {
+        const ds = dateStr(view.y, view.m, day);
+        if (dow===0 || dow===6) td.classList.add("weekend");
+        if (ds===todayStr) td.classList.add("today");
+
+        const cov = dayCoverage(ds);
+        const under = cov.work < state.settings.minWork;
+        const overFolga = cov.folga > state.settings.maxFolga;
+        if (under) td.classList.add("uncovered");
+
+        let flag = "";
+        if (under) flag = `<span class="flag" title="Cobertura insuficiente">⚠️</span>`;
+        else if (overFolga) flag = `<span class="flag" title="Muitas folgas">🛌</span>`;
+
+        let html = `<div class="daynum">${day}</div>${flag}<div class="chips">`;
+        state.emps.forEach(emp=>{
+          const c = resolve(state.schedule[key(emp.id, ds)]);
+          if (c) {
+            html += `<div class="chip" style="background:${c.color}33; color:${c.color}; border:1px solid ${c.color}55"
+                       onclick="openModalFromChip('${emp.id}','${ds}',${day});event.stopPropagation();">
+                       <span class="cdot" style="background:${emp.color}"></span>${escapeHtml(emp.name.split(' ')[0])}</div>`;
+          }
+        });
+        html += `</div>`;
+        td.innerHTML = html;
+        const dayCopy = day;
+        td.onclick = ()=>{
+          if (!selectedEmp) {
+            if (state.emps.length === 0) { setTab("func"); alert("Cadastre um funcionário primeiro."); return; }
+            selectedEmp = state.emps[0].id; render();
+          }
+          openModal(selectedEmp, ds, `${dayCopy} de ${MESES[view.m]} — ${weekdayName(view.y,view.m,dayCopy)}`);
+        };
+        day++;
+      }
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+}
+
+function renderAlerts() {
+  const area = document.getElementById("alertArea");
+  if (state.emps.length === 0) { area.innerHTML = ""; return; }
+  const days = new Date(view.y, view.m+1, 0).getDate();
+  const problems = [];
+  for (let d=1; d<=days; d++) {
+    const cov = dayCoverage(dateStr(view.y, view.m, d));
+    if (cov.work < state.settings.minWork)
+      problems.push(`Dia ${d}: só ${cov.work} trabalhando (mín. ${state.settings.minWork})`);
+    else if (cov.folga > state.settings.maxFolga)
+      problems.push(`Dia ${d}: ${cov.folga} folgas (máx. ${state.settings.maxFolga})`);
+  }
+  if (problems.length === 0) {
+    area.innerHTML = `<div class="alert-box ok"><span>✅</span><div>Cobertura ok em todos os dias.</div></div>`;
+    return;
+  }
+  let lis = problems.map(p=>`<li>${p}</li>`).join("");
+  area.innerHTML = `<div class="alert-box warn"><span>⚠️</span>
+    <div><strong>${problems.length} dia(s) com alerta:</strong><ul>${lis}</ul></div></div>`;
+}
+
+function openModalFromChip(empId, ds, day) {
+  selectedEmp = empId;
+  openModal(empId, ds, `${day} de ${MESES[view.m]} — ${weekdayName(view.y,view.m,day)}`);
+  render();
+}
+function weekdayName(y,m,d) {
+  return ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"][new Date(y,m,d).getDay()];
+}
+
+function renderHist() {
+  const banner = document.getElementById("histBanner");
+  const body = document.getElementById("histBody");
+  if (state.emps.length === 0) {
+    banner.style.display = "none";
+    body.innerHTML = `<div class="empty-state">Cadastre um funcionário na aba Equipe para ver o histórico.</div>`;
+    return;
+  }
+  banner.style.display = "flex";
+  let sel = `<div class="lbl">👤 Histórico de:</div><select onchange="selectEmp(this.value)">`;
+  state.emps.forEach(e=>{
+    sel += `<option value="${e.id}" ${e.id===selectedEmp?'selected':''}>${escapeHtml(e.name)}${e.cargo?' — '+escapeHtml(e.cargo):''}</option>`;
+  });
+  sel += `</select>`;
+  banner.innerHTML = sel;
+
+  const emp = state.emps.find(e=>e.id===selectedEmp) || state.emps[0];
+  const days = new Date(view.y, view.m+1, 0).getDate();
+  const todayStr = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+  let work=0, off=0, falta=0, hours=0;
+  let rows = "";
+  for (let d=1; d<=days; d++) {
+    const ds = dateStr(view.y, view.m, d);
+    const c = resolve(state.schedule[key(emp.id, ds)]);
+    const wknd = isWeekend(view.y, view.m, d);
+    let badge, bstyle;
+    if (!c) { badge = "—"; bstyle = "background:transparent;color:var(--muted);border:1px solid var(--border)"; }
+    else if (c.id==="folga") { off++; badge="🛌 Folga"; bstyle="background:rgba(58,70,88,.5);color:#aeb9c7"; }
+    else if (c.id==="falta") { falta++; badge="❌ Falta"; bstyle=`background:${c.color}22;color:${c.color}`; }
+    else { work++; hours+=shiftHours(c); badge=`✅ ${escapeHtml(c.label)} (${c.start}–${c.end})`; bstyle=`background:${c.color}22;color:${c.color}`; }
+    rows += `<div class="hist-day${wknd?' weekend':''}${ds===todayStr?' today':''}">
+      <span class="dnum">${d}</span>
+      <span class="dwk">${weekdayName(view.y,view.m,d).slice(0,3)}${wknd?' •':''}</span>
+      <span class="badge" style="${bstyle}">${badge}</span>
+    </div>`;
+  }
+
+  body.innerHTML = `
+    <div class="hist-summary">
+      <div class="box"><div class="n" style="color:var(--ok)">${work}</div><div class="l">Trabalhou</div></div>
+      <div class="box"><div class="n">${off}</div><div class="l">Folgas</div></div>
+      <div class="box"><div class="n" style="color:var(--falta)">${falta}</div><div class="l">Faltas</div></div>
+      <div class="box"><div class="n" style="color:var(--accent)">${fmtH(hours)}</div><div class="l">Horas</div></div>
+    </div>
+    <div class="panel" style="padding:8px 14px"><div class="hist-list">${rows}</div></div>`;
+}
+
+function renderStats() {
+  const stats = document.getElementById("stats");
+  stats.innerHTML = "";
+  if (state.emps.length===0) return;
+  const days = new Date(view.y, view.m+1, 0).getDate();
+  state.emps.forEach(emp=>{
+    let work=0, off=0, falta=0, hours=0;
+    for (let d=1; d<=days; d++) {
+      const c = resolve(state.schedule[key(emp.id, dateStr(view.y,view.m,d))]);
+      if (!c) continue;
+      if (c.id==="folga") off++;
+      else if (c.id==="falta") falta++;
+      else if (c.work) { work++; hours += shiftHours(c); }
+    }
+    const div = document.createElement("div");
+    div.className = "stat";
+    div.innerHTML = `<div class="n" style="color:${emp.color}">${work}<span style="font-size:12px;color:var(--muted)"> dias</span>
+        <span class="hrs"> · ${fmtH(hours)}</span></div>
+      <div class="l">${escapeHtml(emp.name)}${emp.cargo?' · '+escapeHtml(emp.cargo):''}</div>
+      <div class="l" style="margin-top:4px">🛌 ${off} folga${off!==1?'s':''} · ❌ ${falta} falta${falta!==1?'s':''}</div>`;
+    stats.appendChild(div);
+  });
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "escala.json"; a.click();
+}
+
+/* ===================== PONTO ===================== */
+function punchDateStr(t){ const d=new Date(t); return dateStr(d.getFullYear(), d.getMonth(), d.getDate()); }
+function punchTime(t){ const d=new Date(t); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+function punchesOf(empId, ds){
+  return (state.punches[empId]||[]).filter(p=>punchDateStr(p.t)===ds).sort((a,b)=>a.t-b.t);
+}
+function workedMs(arr){
+  let ms=0, open=null;
+  arr.forEach(p=>{ if(p.type==='in') open=p.t; else if(p.type==='out'&&open!=null){ ms+=p.t-open; open=null; } });
+  return ms;
+}
+function fmtMs(ms){ const h=Math.floor(ms/3600000), m=Math.floor(ms%3600000/60000); return `${h}h${String(m).padStart(2,'0')}`; }
+function isWorkingNow(empId){
+  const today = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const arr = punchesOf(empId, today);
+  return arr.length>0 && arr[arr.length-1].type==='in';
+}
+
+function renderPonto() {
+  const banner = document.getElementById("pontoBanner");
+  const body = document.getElementById("pontoBody");
+  if (state.emps.length === 0) {
+    banner.style.display="none";
+    body.innerHTML = `<div class="empty-state">Cadastre funcionários para ver os registros de ponto.</div>`;
+    return;
+  }
+  banner.style.display="flex";
+  let sel = `<div class="lbl">⏱️ Ponto de:</div><select onchange="selectEmp(this.value)">`;
+  state.emps.forEach(e=>{
+    sel += `<option value="${e.id}" ${e.id===selectedEmp?'selected':''}>${escapeHtml(e.name)}${e.cargo?' — '+escapeHtml(e.cargo):''}</option>`;
+  });
+  sel += `</select>`;
+  banner.innerHTML = sel;
+
+  const emp = state.emps.find(e=>e.id===selectedEmp) || state.emps[0];
+  const days = new Date(view.y, view.m+1, 0).getDate();
+  const todayStr = dateStr(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  let totalMs = 0, rows = "";
+  for (let d=1; d<=days; d++) {
+    const ds = dateStr(view.y, view.m, d);
+    const arr = punchesOf(emp.id, ds);
+    if (!arr.length) continue;
+    const ms = workedMs(arr); totalMs += ms;
+    const times = arr.map(p=>{
+      const col = p.type==='in'?'var(--ok)':'var(--falta)';
+      const map = (p.lat!=null) ? ` <a href="https://maps.google.com/?q=${p.lat},${p.lng}" target="_blank" title="ver no mapa (~${Math.round(p.accuracy||0)}m)" style="text-decoration:none">📍</a>` : '';
+      const cam = p.photo_path ? ` <span style="cursor:pointer" title="ver foto" onclick="viewPhoto('${p.photo_path}')">📷</span>` : '';
+      return `<b style="color:${col}" title="NSR ${p.nsr??'—'}">${p.type==='in'?'▸':'◂'} ${punchTime(p.t)}</b>${map}${cam}`;
+    }).join(" &nbsp; ");
+    rows += `<div class="hist-day${ds===todayStr?' today':''}">
+      <span class="dnum">${d}</span>
+      <span class="dwk">${weekdayName(view.y,view.m,d).slice(0,3)}</span>
+      <span style="flex:1;font-size:12px">${times}</span>
+      <span class="badge" style="background:var(--accent-soft);color:var(--text)">${fmtMs(ms)}</span>
+    </div>`;
+  }
+  if (!rows) rows = `<div class="empty-state">Sem batidas de ponto neste mês.</div>`;
+  body.innerHTML = `
+    <div class="hist-summary" style="grid-template-columns:1fr 1fr">
+      <div class="box"><div class="n" style="color:var(--accent)">${fmtMs(totalMs)}</div><div class="l">Horas no ponto (mês)</div></div>
+      <div class="box"><div class="n">${isWorkingNow(emp.id)?'🟢':'⚪'}</div><div class="l">${isWorkingNow(emp.id)?'Trabalhando agora':'Fora'}</div></div>
+    </div>
+    <div class="panel" style="padding:8px 14px"><div class="hist-list">${rows}</div></div>`;
+}
+
+/* ===================== AUTENTICAÇÃO (Supabase Auth) ===================== */
+let session = null;        // { role:'admin' }  ou  { role:'emp', empId }
+let clockTimer = null;
+let realtimeCh = null;
+
+function setLoginRole(r) {
+  document.getElementById("roleEmp").classList.toggle("active", r==="emp");
+  document.getElementById("roleAdmin").classList.toggle("active", r==="admin");
+  document.getElementById("loginEmp").style.display = r==="emp" ? "flex" : "none";
+  document.getElementById("loginAdmin").style.display = r==="admin" ? "flex" : "none";
+}
+async function doLoginAdmin() {
+  const email = document.getElementById("liAdminEmail").value.trim();
+  const pw = document.getElementById("liAdmin").value;
+  if (!email || !pw) { alert("Informe e-mail e senha."); return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+  if (error) { alert("E-mail ou senha incorretos."); return; }
+  if (await enterFromUser(data.user, "admin")) {
+    document.getElementById("liAdmin").value = "";
+  }
+}
+async function doLoginEmp() {
+  const login = document.getElementById("liLogin").value.trim().toLowerCase();
+  const pin = document.getElementById("liPin").value.trim();
+  if (!login || !pin) { alert("Informe login e PIN."); return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email: loginToEmail(login), password: padPin(pin) });
+  if (error) { alert("Login ou PIN incorretos."); return; }
+  if (await enterFromUser(data.user, "emp")) {
+    document.getElementById("liLogin").value = ""; document.getElementById("liPin").value = "";
+  }
+}
+async function enterFromUser(user, expected) {
+  const { data: prof } = await sb.from("profiles").select("role").eq("user_id", user.id).maybeSingle();
+  const role = prof?.role;
+  if (expected === "admin" && role !== "gestor") { alert("Esta conta não é de gestor."); await sb.auth.signOut(); return false; }
+  if (expected === "emp" && role === "gestor") { alert("Conta de gestor: use a aba 🛠️ Gestor."); await sb.auth.signOut(); return false; }
+  session = role === "gestor" ? { role:"admin" } : { role:"emp", empId: user.id };
+  await applySession();
+  return true;
+}
+async function logout() {
+  await sb.auth.signOut();
+  session = null;
+  state = emptyState();
+  if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
+  if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
+  applyUI();
+  setLoginRole("emp");
+}
+async function changeAdminPin() {
+  const v = document.getElementById("cfgAdminPin").value;
+  if (!v || v.length < 6) { alert("A nova senha precisa ter ao menos 6 caracteres."); return; }
+  const { error } = await sb.auth.updateUser({ password: v });
+  if (error) { alert("Erro ao trocar senha: " + error.message); return; }
+  document.getElementById("cfgAdminPin").value = "";
+  alert("Senha do gestor atualizada.");
+}
+
+function applyUI() {
+  document.getElementById("loginScreen").style.display = !session ? "block" : "none";
+  document.getElementById("adminApp").style.display = (session && session.role==="admin") ? "block" : "none";
+  document.getElementById("empApp").style.display = (session && session.role==="emp") ? "block" : "none";
+}
+function subscribeRealtime(cb) {
+  if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
+  realtimeCh = sb.channel("rt-escala")
+    .on("postgres_changes", { event:"*", schema:"public", table:"punches"  }, cb)
+    .on("postgres_changes", { event:"*", schema:"public", table:"schedule" }, cb)
+    .on("postgres_changes", { event:"*", schema:"public", table:"profiles" }, cb)
+    .subscribe();
+}
+async function applySession() {
+  if (clockTimer) { clearInterval(clockTimer); clockTimer = null; }
+  if (realtimeCh) { sb.removeChannel(realtimeCh); realtimeCh = null; }
+  applyUI();
+  if (!session) return;
+  await loadFromCloud();
+  if (session.role === "admin") {
+    selectedEmp = (selectedEmp && state.emps.some(e=>e.id===selectedEmp)) ? selectedEmp : (state.emps[0]?.id || null);
+    render();
+    subscribeRealtime(() => reloadAndRender());
+  } else {
+    selectedEmp = session.empId;
+    renderEmployee();
+    clockTimer = setInterval(tickClock, 1000);
+    subscribeRealtime(async () => { await loadFromCloud(); renderEmployee(); });
+  }
+}
+
+/* ===================== APP DO FUNCIONÁRIO ===================== */
+function tickClock() {
+  const now = new Date();
+  document.getElementById("clockTime").textContent =
+    `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+}
+/* Geolocalização (não bloqueia a batida se negada) */
+function getGeo() {
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    navigator.geolocation.getCurrentPosition(
+      p => res({ lat:p.coords.latitude, lng:p.coords.longitude, accuracy:p.coords.accuracy }),
+      () => res(null),
+      { enableHighAccuracy:true, timeout:8000, maximumAge:0 }
+    );
+  });
+}
+/* Selfie automática (requer HTTPS; se câmera negar, segue sem foto) */
+async function captureSelfie() {
+  if (!navigator.mediaDevices?.getUserMedia) return null;
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"user", width:{ ideal:320 } }, audio:false }); }
+  catch(e) { return null; }
+  try {
+    const video = document.createElement("video");
+    video.srcObject = stream; video.muted = true; video.playsInline = true;
+    await video.play();
+    await new Promise(r => setTimeout(r, 500));
+    const w = 320, h = Math.round(320 * ((video.videoHeight/video.videoWidth) || 0.75));
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    c.getContext("2d").drawImage(video, 0, 0, w, h);
+    return await new Promise(r => c.toBlob(r, "image/jpeg", 0.7));
+  } finally { stream.getTracks().forEach(t => t.stop()); }
+}
+async function uploadSelfie(blob) {
+  if (!blob) return null;
+  const path = `${session.empId}/${Date.now()}.jpg`;
+  const { error } = await sb.storage.from("punch-photos").upload(path, blob, { contentType:"image/jpeg" });
+  if (error) { console.warn("foto não enviada:", error.message); return null; }
+  return path;
+}
+async function clockToggle() {
+  const btn = document.getElementById("btnPunch");
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "Registrando…";
+  try {
+    const geo = await getGeo();
+    let photoPath = null;
+    try { photoPath = await uploadSelfie(await captureSelfie()); } catch(e) { /* foto é opcional */ }
+    const { data, error } = await sb.rpc("register_punch", {
+      p_lat: geo?.lat ?? null, p_lng: geo?.lng ?? null, p_accuracy: geo?.accuracy ?? null,
+      p_photo_path: photoPath, p_device: (navigator.userAgent||"").slice(0,180)
+    });
+    if (error) throw error;
+    await loadFromCloud();
+    renderEmployee();
+    showComprovante(data);
+  } catch(e) { cloudErr(e); }
+  finally { btn.disabled = false; btn.textContent = old; }
+}
+let _lastComp = null;
+function showComprovante(p) {
+  _lastComp = p;
+  const dt = new Date(p.ts);
+  const geo = (p.lat!=null) ? `${(+p.lat).toFixed(5)}, ${(+p.lng).toFixed(5)} (~${Math.round(p.accuracy||0)} m)` : "não disponível";
+  const tipo = p.type==="in" ? "🟢 ENTRADA" : "🔴 SAÍDA";
+  let ov = document.getElementById("compOverlay");
+  if (!ov) { ov = document.createElement("div"); ov.id = "compOverlay"; ov.className = "modal-bg"; document.body.appendChild(ov); }
+  ov.innerHTML = `<div class="modal" style="max-width:420px">
+    <h3>Comprovante de ponto</h3>
+    <div class="day-label">Guarde este comprovante (tire um print).</div>
+    <div class="punch-today">
+      <div class="pl"><span>Registro nº (NSR)</span><b>${p.nsr ?? "—"}</b></div>
+      <div class="pl"><span>Tipo</span><b>${tipo}</b></div>
+      <div class="pl"><span>Data/hora</span><b>${dt.toLocaleString("pt-BR")}</b></div>
+      <div class="pl"><span>Local</span><b>${geo}</b></div>
+      <div class="pl"><span>Foto</span><b>${p.photo_path ? "registrada" : "não"}</b></div>
+      <div class="pl"><span>Código (hash)</span><b style="font-size:11px">${(p.hash||"").slice(0,24)}…</b></div>
+    </div>
+    <div class="modal-actions">
+      <button onclick="printComprovante()">🖨 Imprimir</button>
+      <button class="primary" onclick="document.getElementById('compOverlay').classList.remove('show')">Fechar</button>
+    </div>
+  </div>`;
+  ov.classList.add("show");
+}
+function printComprovante() {
+  const p = _lastComp;
+  if (!p) return;
+  const dt = new Date(p.ts);
+  const geo = (p.lat!=null) ? `${(+p.lat).toFixed(5)}, ${(+p.lng).toFixed(5)} (~${Math.round(p.accuracy||0)} m)` : "não disponível";
+  const w = window.open("", "_blank", "width=420,height=560");
+  if (!w) { alert("Permita pop-ups para imprimir o comprovante."); return; }
+  w.document.write(`<title>Comprovante de ponto</title>
+    <div style="font-family:sans-serif;padding:20px;max-width:360px">
+    <h2 style="margin:0 0 12px">Comprovante de registro de ponto</h2>
+    <p><b>NSR:</b> ${p.nsr ?? "—"}<br>
+    <b>Tipo:</b> ${p.type==="in"?"ENTRADA":"SAÍDA"}<br>
+    <b>Data/hora:</b> ${dt.toLocaleString("pt-BR")}<br>
+    <b>Local:</b> ${geo}<br>
+    <b>Foto:</b> ${p.photo_path?"registrada":"não"}<br>
+    <b>Código de integridade (hash):</b><br><span style="font-size:11px;word-break:break-all">${p.hash||""}</span></p>
+    <hr><p style="font-size:11px;color:#555">Registro de gestão interna. Não constitui comprovante fiscal/legal nos termos da Portaria MTP 671/2021.</p>
+    </div>`);
+  w.document.close(); w.focus(); w.print();
+}
+async function viewPhoto(path) {
+  const { data, error } = await sb.storage.from("punch-photos").createSignedUrl(path, 120);
+  if (error) { alert("Não foi possível abrir a foto."); return; }
+  window.open(data.signedUrl, "_blank");
+}
+function renderEmployee() {
+  const emp = state.emps.find(e=>e.id===session.empId);
+  if (!emp) return;
+  document.getElementById("empHi").innerHTML = `Olá, ${escapeHtml(emp.name.split(' ')[0])}!<small>${emp.cargo?escapeHtml(emp.cargo):''}</small>`;
+  const now = new Date();
+  document.getElementById("clockDate").textContent =
+    `${weekdayName(now.getFullYear(), now.getMonth(), now.getDate())}, ${now.getDate()} de ${MESES[now.getMonth()]} ${now.getFullYear()}`;
+  tickClock();
+
+  const working = isWorkingNow(emp.id);
+  document.getElementById("clockStatus").innerHTML = working
+    ? `<span class="pill working">🟢 Você está trabalhando</span>`
+    : `<span class="pill outside">⚪ Você está fora</span>`;
+  const btn = document.getElementById("btnPunch");
+  btn.className = "btn-punch " + (working ? "out" : "in");
+  btn.textContent = working ? "🔴 Bater SAÍDA" : "🟢 Bater ENTRADA";
+
+  // batidas de hoje
+  const todayStr = dateStr(now.getFullYear(), now.getMonth(), now.getDate());
+  const arr = punchesOf(emp.id, todayStr);
+  let pt = "";
+  if (arr.length) {
+    pt = `<div style="font-weight:600;color:var(--text);margin-bottom:4px">Hoje</div>`;
+    arr.forEach(p=>{ pt += `<div class="pl"><span>${p.type==='in'?'Entrada':'Saída'}</span><b>${punchTime(p.t)}</b></div>`; });
+    pt += `<div class="pl"><span>Total trabalhado</span><b style="color:var(--accent)">${fmtMs(workedMs(arr))}</b></div>`;
+  } else {
+    pt = `<div style="text-align:center;color:var(--muted)">Nenhuma batida hoje ainda.</div>`;
+  }
+  document.getElementById("punchToday").innerHTML = pt;
+
+  // histórico do mês (escala planejada + ponto real)
+  const y = now.getFullYear(), m = now.getMonth();
+  const days = new Date(y, m+1, 0).getDate();
+  let work=0, off=0, falta=0, planHours=0, pontoMs=0, rows="";
+  for (let d=1; d<=days; d++) {
+    const ds = dateStr(y, m, d);
+    const c = resolve(state.schedule[key(emp.id, ds)]);
+    const parr = punchesOf(emp.id, ds);
+    const pms = workedMs(parr); pontoMs += pms;
+    let badge, bstyle;
+    if (!c) { badge="—"; bstyle="background:transparent;color:var(--muted);border:1px solid var(--border)"; }
+    else if (c.id==="folga") { off++; badge="🛌 Folga"; bstyle="background:rgba(58,70,88,.5);color:#aeb9c7"; }
+    else if (c.id==="falta") { falta++; badge="❌ Falta"; bstyle=`background:${c.color}22;color:${c.color}`; }
+    else { work++; planHours+=shiftHours(c); badge=`✅ ${escapeHtml(c.label)}`; bstyle=`background:${c.color}22;color:${c.color}`; }
+    const pontoTxt = pms>0 ? `<span style="font-size:11px;color:var(--accent)">⏱️ ${fmtMs(pms)}</span>` : "";
+    rows += `<div class="hist-day${ds===todayStr?' today':''}">
+      <span class="dnum">${d}</span>
+      <span class="dwk">${weekdayName(y,m,d).slice(0,3)}</span>
+      <span style="flex:1;text-align:right;margin-right:8px">${pontoTxt}</span>
+      <span class="badge" style="${bstyle}">${badge}</span>
+    </div>`;
+  }
+  document.getElementById("empHistArea").innerHTML = `
+    <h2 style="font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:6px 0 10px">Meu mês — ${MESES[m]} ${y}</h2>
+    <div class="hist-summary">
+      <div class="box"><div class="n" style="color:var(--ok)">${work}</div><div class="l">Trabalhou</div></div>
+      <div class="box"><div class="n">${off}</div><div class="l">Folgas</div></div>
+      <div class="box"><div class="n" style="color:var(--falta)">${falta}</div><div class="l">Faltas</div></div>
+      <div class="box"><div class="n" style="color:var(--accent)">${fmtMs(pontoMs)}</div><div class="l">Ponto</div></div>
+    </div>
+    <div class="panel" style="padding:8px 14px"><div class="hist-list">${rows}</div></div>`;
+}
+
+/* ===================== INIT ===================== */
+(async function init(){
+  setLoginRole("emp");
+  const { data: { session: s } } = await sb.auth.getSession();
+  if (s?.user) {
+    const { data: prof } = await sb.from("profiles").select("role").eq("user_id", s.user.id).maybeSingle();
+    if (prof?.role === "gestor") session = { role:"admin" };
+    else if (prof?.role === "funcionario") session = { role:"emp", empId: s.user.id };
+    else { await sb.auth.signOut(); session = null; }
+  }
+  await applySession();
+})();
+</script>
+</body>
+</html>
